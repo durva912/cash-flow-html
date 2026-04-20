@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — CashFlow</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .page { display: flex; flex-direction: column; gap: 20px; }
+  .icon-box-primary { background: var(--primary); }
+  .icon-box-danger  { background: var(--danger-bg); }
+  .icon-box-success { background: var(--success-bg); }
+  .icon-box svg {
+    width: 18px; height: 18px; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .balance-entry { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header><h1>CashFlow</h1></header>
+
+<div class="px-6 page">
+
+  <!-- Total Expenses -->
+  <div class="card">
+    <div class="row">
+      <div class="icon-box icon-box-primary" style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center">
+        <svg viewBox="0 0 24 24" style="stroke:#fff">
+          <path d="M6 3h12"/><path d="M6 8h12"/>
+          <path d="m6 13 8.5 8"/><path d="M6 13h3"/>
+          <path d="M9 13c6.667 0 6.667-10 0-10"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm text-muted">Total Expenses</p>
+        <p class="text-2xl" id="db-total-exp">₹0.00</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- You Owe / Owed to You -->
+  <div class="grid-2">
+    <div class="card card-sm">
+      <div class="row mb-2">
+        <div style="width:32px;height:32px;background:var(--danger-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--danger);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+            <path d="M16 17h6v-6"/><path d="m22 17-8.5-8.5-5 5L2 7"/>
+          </svg>
+        </div>
+        <p class="text-xs text-muted">You Owe</p>
+      </div>
+      <p class="text-xl text-danger" id="db-you-owe">₹0.00</p>
+    </div>
+    <div class="card card-sm">
+      <div class="row mb-2">
+        <div style="width:32px;height:32px;background:var(--success-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--success);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+            <path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>
+          </svg>
+        </div>
+        <p class="text-xs text-muted">Owed to You</p>
+      </div>
+      <p class="text-xl text-success" id="db-owed-you">₹0.00</p>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div>
+    <p class="section-title">Quick Actions</p>
+    <div class="grid-2">
+      <a href="expenses.html" class="btn btn-primary btn-full">My Expenses</a>
+      <a href="friends.html" class="btn btn-outline btn-full">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" x2="19" y1="8" y2="14"/>
+          <line x1="22" x2="16" y1="11" y2="11"/>
+        </svg>
+        My Friends
+      </a>
+    </div>
+  </div>
+
+  <!-- Friend Balances -->
+  <div>
+    <p class="section-title">Friend Balances</p>
+    <div id="db-balances"></div>
+  </div>
+
+</div>
+
+<div id="nav-placeholder"></div>
+
+<script src="shared.js"></script>
+<script>
+  document.getElementById('nav-placeholder').innerHTML = bottomNav('dashboard');
+
+  const balances = calcBalances();
+  const totalExp = state.expenses.reduce((s, e) => s + e.amount, 0);
+  const youOwe   = balances.reduce((s, b) => s + b.you_owe, 0);
+  const owedYou  = balances.reduce((s, b) => s + b.owed_to_you, 0);
+
+  document.getElementById('db-total-exp').textContent = fmt(totalExp);
+  document.getElementById('db-you-owe').textContent   = fmt(youOwe);
+  document.getElementById('db-owed-you').textContent  = fmt(owedYou);
+
+  const el = document.getElementById('db-balances');
+  if (balances.length === 0) {
+    el.innerHTML = `<div class="card empty-state">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+      <p>No balances yet</p>
+      <p class="text-xs" style="margin-top:4px">Add friends and hisab entries to see balances here</p>
+    </div>`;
+  } else {
+    el.innerHTML = balances.map(b => `
+      <div class="card card-sm balance-entry">
+        <p class="font-semibold mb-2">${b.friend_name}</p>
+        <div class="grid-2">
+          <span class="badge badge-danger">You Owe: ${fmt(b.you_owe)}</span>
+          <span class="badge badge-success">Owed: ${fmt(b.owed_to_you)}</span>
+        </div>
+      </div>`).join('');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friend Hisab — CashFlow</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .back-btn {
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--muted);
+    font-family: var(--font-body);
+    padding: 0;
+  }
+  .back-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .entry-card { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <button class="back-btn" onclick="history.back()">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      Back
+    </button>
+    <h1 id="page-title" style="margin-top:4px">Friend</h1>
+  </div>
+  <button class="btn btn-primary btn-sm" id="toggle-form">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+      <path d="M5 12h14"/><path d="M12 5v14"/>
+    </svg>
+    Add Hisab
+  </button>
+</header>
+
+<div class="px-6">
+
+  <!-- Balance Summary -->
+  <div class="grid-2 mb-5">
+    <div class="card card-sm">
+      <p class="text-xs text-muted mb-1">You Owe</p>
+      <p class="text-2xl text-danger" id="hisab-owe">₹0.00</p>
+    </div>
+    <div class="card card-sm">
+      <p class="text-xs text-muted mb-1">Owed to You</p>
+      <p class="text-2xl text-success" id="hisab-owed">₹0.00</p>
+    </div>
+  </div>
+
+  <!-- Add Form -->
+  <div class="form-panel" id="hisab-form">
+    <input class="input" id="hisab-desc" placeholder="Description">
+    <input class="input" type="number" min="0" step="0.01" id="hisab-amount" placeholder="Amount (₹)">
+    <input class="input" id="hisab-cat" placeholder="Category (e.g. General)">
+    <input class="input" type="date" id="hisab-date">
+    <select class="input" id="hisab-dir">
+      <option value="you_owe">You Owe</option>
+      <option value="owed_to_you">Owed to You</option>
+    </select>
+    <button class="btn btn-primary btn-full btn-lg" id="hisab-submit">Add Hisab</button>
+    <p class="error-msg" id="hisab-error" style="display:none"></p>
+  </div>
+
+  <!-- Entries List -->
+  <div id="hisab-list"></div>
+
+</div>
+
+<div id="nav-placeholder"></div>
+
+<script src="shared.js"></script>
+<script>
+  document.getElementById('nav-placeholder').innerHTML = bottomNav('friends');
+  document.getElementById('hisab-date').value = today();
+
+  const params   = new URLSearchParams(location.search);
+  const friendId = parseInt(params.get('id'));
+  const friend   = state.friends.find(f => f.id === friendId);
+
+  if (!friend) { document.getElementById('page-title').textContent = 'Friend Not Found'; }
+  else { document.getElementById('page-title').textContent = friend.name; }
+
+  if (!state.hisab[friendId]) state.hisab[friendId] = [];
+
+  function render() {
+    const entries = state.hisab[friendId] || [];
+    const youOwe  = entries.filter(e => e.direction === 'you_owe').reduce((s, e) => s + e.amount, 0);
+    const owedYou = entries.filter(e => e.direction === 'owed_to_you').reduce((s, e) => s + e.amount, 0);
+    document.getElementById('hisab-owe').textContent  = fmt(youOwe);
+    document.getElementById('hisab-owed').textContent = fmt(owedYou);
+
+    const el = document.getElementById('hisab-list');
+    if (entries.length === 0) {
+      el.innerHTML = `<div class="card empty-state"><p>No hisab entries yet.</p></div>`;
+    } else {
+      el.innerHTML = entries.map(e => `
+        <div class="card card-sm entry-card">
+          <div class="row-between">
+            <p class="font-semibold">${e.description}</p>
+            <div class="row" style="gap:8px">
+              <span class="font-bold ${e.direction === 'you_owe' ? 'text-danger' : 'text-success'}">${fmt(e.amount)}</span>
+              <button class="del-btn" onclick="del(${e.id})">${trashIcon()}</button>
+            </div>
+          </div>
+          <p class="text-xs text-muted mt-2">
+            ${e.category || 'General'} · ${e.entry_date} · ${e.direction === 'you_owe' ? 'You Owe' : 'Owed to You'}
+          </p>
+        </div>`).join('');
+    }
+  }
+
+  function del(id) {
+    state.hisab[friendId] = state.hisab[friendId].filter(e => e.id !== id);
+    saveState(); render();
+  }
+
+  document.getElementById('toggle-form').addEventListener('click', () => {
+    document.getElementById('hisab-form').classList.toggle('open');
+  });
+
+  document.getElementById('hisab-submit').addEventListener('click', () => {
+    const desc   = document.getElementById('hisab-desc').value.trim();
+    const amount = parseFloat(document.getElementById('hisab-amount').value);
+    const cat    = document.getElementById('hisab-cat').value.trim() || 'General';
+    const date   = document.getElementById('hisab-date').value || today();
+    const dir    = document.getElementById('hisab-dir').value;
+    if (!desc || isNaN(amount) || amount <= 0) { showErr('hisab-error', 'Please fill valid description and amount.'); return; }
+    const entries = state.hisab[friendId];
+    entries.unshift({ id: nextId(entries), description: desc, amount, category: cat, direction: dir, entry_date: date });
+    saveState();
+    document.getElementById('hisab-desc').value = '';
+    document.getElementById('hisab-amount').value = '';
+    document.getElementById('hisab-cat').value = '';
+    document.getElementById('hisab-form').classList.remove('open');
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

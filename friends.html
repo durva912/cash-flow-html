@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friends — CashFlow</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+
+<header>
+  <h1>Friends</h1>
+  <button class="btn btn-primary btn-sm" id="toggle-form">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+      <path d="M5 12h14"/><path d="M12 5v14"/>
+    </svg>
+    Add Friend
+  </button>
+</header>
+
+<div class="px-6">
+
+  <!-- Add Form -->
+  <div class="form-panel" id="friend-form">
+    <div><label class="field">Friend's Name</label>
+      <input class="input" id="friend-name" placeholder="Jane Doe" required></div>
+    <div><label class="field">Friend's Email (optional)</label>
+      <input class="input" type="email" id="friend-email" placeholder="jane@example.com"></div>
+    <button class="btn btn-primary btn-full btn-lg" id="friend-submit">Add Friend</button>
+    <p class="error-msg" id="friend-error" style="display:none"></p>
+  </div>
+
+  <!-- Friends List -->
+  <div id="friends-list"></div>
+
+</div>
+
+<div id="nav-placeholder"></div>
+
+<script src="shared.js"></script>
+<script>
+  document.getElementById('nav-placeholder').innerHTML = bottomNav('friends');
+
+  function render() {
+    const el = document.getElementById('friends-list');
+    const balances = calcBalances();
+    const balMap = {};
+    balances.forEach(b => { balMap[b.friend_id] = b; });
+
+    if (state.friends.length === 0) {
+      el.innerHTML = `<div class="card empty-state" style="padding:40px 16px">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+        <p class="font-semibold" style="font-size:15px;color:var(--fg);margin-bottom:4px">No friends yet</p>
+        <p>Add friends to split expenses and track balances</p>
+      </div>`;
+    } else {
+      el.innerHTML = state.friends.map(f => {
+        const b = balMap[f.id] || { you_owe: 0, owed_to_you: 0 };
+        return `<button class="friend-btn" onclick="location.href='hisab.html?id=${f.id}'">
+          <div class="row mb-2">
+            <div class="avatar">${f.name.charAt(0).toUpperCase()}</div>
+            <div>
+              <p class="font-semibold">${f.name}</p>
+              ${f.email ? `<p class="text-xs text-muted">${f.email}</p>` : ''}
+            </div>
+          </div>
+          <div class="grid-2">
+            <span class="badge badge-danger">You Owe: ${fmt(b.you_owe)}</span>
+            <span class="badge badge-success">Owed: ${fmt(b.owed_to_you)}</span>
+          </div>
+        </button>`;
+      }).join('');
+    }
+  }
+
+  document.getElementById('toggle-form').addEventListener('click', () => {
+    document.getElementById('friend-form').classList.toggle('open');
+  });
+
+  document.getElementById('friend-submit').addEventListener('click', () => {
+    const name  = document.getElementById('friend-name').value.trim();
+    const email = document.getElementById('friend-email').value.trim();
+    if (!name) { showErr('friend-error', 'Please enter a name.'); return; }
+    const newFriend = { id: nextId(state.friends), name, email: email || null };
+    state.friends.unshift(newFriend);
+    if (!state.hisab[newFriend.id]) state.hisab[newFriend.id] = [];
+    saveState();
+    document.getElementById('friend-name').value  = '';
+    document.getElementById('friend-email').value = '';
+    document.getElementById('friend-form').classList.remove('open');
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

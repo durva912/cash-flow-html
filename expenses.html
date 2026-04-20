@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Expenses — CashFlow</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  .cat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    margin-bottom: 8px;
+  }
+  .exp-icon {
+    width: 36px; height: 36px; background: var(--muted-bg);
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .exp-icon svg {
+    width: 16px; height: 16px; stroke: var(--fg); fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>My Expenses</h1>
+  <button class="btn btn-primary btn-sm" id="toggle-form">
+    <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+      <path d="M5 12h14"/><path d="M12 5v14"/>
+    </svg>
+    Add Expense
+  </button>
+</header>
+
+<div class="px-6">
+
+  <!-- Add Form -->
+  <div class="form-panel" id="exp-form">
+    <div><label class="field">Description</label>
+      <input class="input" id="exp-desc" placeholder="What did you spend on?"></div>
+    <div><label class="field">Amount (₹)</label>
+      <input class="input" type="number" min="0" step="0.01" id="exp-amount" placeholder="0.00"></div>
+    <div><label class="field">Category</label>
+      <select class="input" id="exp-cat">
+        <option>Food</option><option>Transport</option><option>Shopping</option>
+        <option>Entertainment</option><option>Bills</option><option>Health</option>
+        <option>Education</option><option>Other</option>
+      </select></div>
+    <div><label class="field">Mode</label>
+      <select class="input" id="exp-mode">
+        <option value="cash">Cash</option><option value="online">Online</option>
+      </select></div>
+    <div><label class="field">Date</label>
+      <input class="input" type="date" id="exp-date"></div>
+    <button class="btn btn-primary btn-full btn-lg" id="exp-submit">Add Expense</button>
+    <p class="error-msg" id="exp-error" style="display:none"></p>
+  </div>
+
+  <!-- Spending by Category -->
+  <div class="mb-5">
+    <p class="section-title">Spending by Category</p>
+    <div id="exp-cats"></div>
+  </div>
+
+  <!-- Payment Mode Summary -->
+  <div class="grid-2 mb-5">
+    <div class="card card-sm">
+      <p class="text-sm text-muted mb-1">Online Used</p>
+      <p class="text-2xl text-success" id="exp-online">₹0.00</p>
+    </div>
+    <div class="card card-sm">
+      <p class="text-sm text-muted mb-1">Cash Used</p>
+      <p class="text-2xl" id="exp-cash">₹0.00</p>
+    </div>
+  </div>
+
+  <!-- Totals -->
+  <div class="card mb-5">
+    <div class="row-between">
+      <div>
+        <p class="text-sm text-muted">Total Spent</p>
+        <p class="text-2xl" id="exp-total">₹0.00</p>
+      </div>
+      <div style="text-align:right">
+        <p class="text-sm text-muted">Total Expenses</p>
+        <p class="text-2xl" id="exp-count">0</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expense List -->
+  <div id="exp-list" class="gap-8"></div>
+
+</div>
+
+<div id="nav-placeholder"></div>
+
+<script src="shared.js"></script>
+<script>
+  document.getElementById('nav-placeholder').innerHTML = bottomNav('expenses');
+  document.getElementById('exp-date').value = today();
+
+  function render() {
+    const exps = state.expenses;
+    const total  = exps.reduce((s, e) => s + e.amount, 0);
+    const cash   = exps.filter(e => e.payment_mode === 'cash').reduce((s, e) => s + e.amount, 0);
+    const online = exps.filter(e => e.payment_mode === 'online').reduce((s, e) => s + e.amount, 0);
+
+    document.getElementById('exp-total').textContent  = fmt(total);
+    document.getElementById('exp-cash').textContent   = fmt(cash);
+    document.getElementById('exp-online').textContent = fmt(online);
+    document.getElementById('exp-count').textContent  = exps.length;
+
+    const catEl = document.getElementById('exp-cats');
+    if (exps.length === 0) {
+      catEl.innerHTML = `<div class="card empty-state">
+        <svg viewBox="0 0 24 24"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/></svg>
+        <p>No expenses yet</p><p class="text-xs" style="margin-top:4px">Add your first expense to see insights</p>
+      </div>`;
+    } else {
+      const cats = {};
+      exps.forEach(e => { const k = e.category || 'Other'; cats[k] = (cats[k] || 0) + e.amount; });
+      catEl.innerHTML = Object.entries(cats).map(([c, v]) =>
+        `<div class="cat-row"><span class="font-semibold">${c}</span><span class="font-bold">${fmt(v)}</span></div>`
+      ).join('');
+    }
+
+    document.getElementById('exp-list').innerHTML = exps.map(e => `
+      <div class="card card-sm">
+        <div class="row-between">
+          <div class="row" style="gap:12px">
+            <div class="exp-icon"><svg viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></svg></div>
+            <div>
+              <p class="font-semibold">${e.title}</p>
+              <p class="text-xs text-muted">${e.category || 'Other'} · ${e.payment_mode} · ${e.spent_on}</p>
+            </div>
+          </div>
+          <div class="row" style="gap:8px">
+            <span class="font-bold">${fmt(e.amount)}</span>
+            <button class="del-btn" onclick="del(${e.id})">${trashIcon()}</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function del(id) {
+    state.expenses = state.expenses.filter(e => e.id !== id);
+    saveState(); render();
+  }
+
+  document.getElementById('toggle-form').addEventListener('click', () => {
+    document.getElementById('exp-form').classList.toggle('open');
+  });
+
+  document.getElementById('exp-submit').addEventListener('click', () => {
+    const desc   = document.getElementById('exp-desc').value.trim();
+    const amount = parseFloat(document.getElementById('exp-amount').value);
+    const cat    = document.getElementById('exp-cat').value;
+    const mode   = document.getElementById('exp-mode').value;
+    const date   = document.getElementById('exp-date').value;
+    if (!desc || isNaN(amount) || amount <= 0) { showErr('exp-error', 'Please fill in description and a valid amount.'); return; }
+    if (!date) { showErr('exp-error', 'Please select a date.'); return; }
+    state.expenses.unshift({ id: nextId(state.expenses), title: desc, amount, category: cat, payment_mode: mode, spent_on: date });
+    saveState();
+    document.getElementById('exp-desc').value = '';
+    document.getElementById('exp-amount').value = '';
+    document.getElementById('exp-form').classList.remove('open');
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>

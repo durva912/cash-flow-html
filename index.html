@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CashFlow — Track Expenses. Split with Friends.</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { padding-bottom: 0; }
+  header { padding: 16px 24px; }
+  header h1 { font-family: var(--font-display); font-size: 20px; }
+
+  main {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 48px 24px 80px;
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: 38px; line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .hero p {
+    font-size: 15px; color: var(--muted);
+    line-height: 1.7; max-width: 320px;
+    margin: 0 auto 32px;
+  }
+
+  .features {
+    width: 100%; max-width: 420px;
+    display: flex; flex-direction: column;
+    gap: 12px; margin-top: 52px;
+  }
+  .feature-item {
+    display: flex; align-items: flex-start;
+    gap: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 4px);
+    padding: 18px; text-align: left;
+  }
+  .feature-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .feature-icon svg {
+    width: 20px; height: 20px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .feature-item h3 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .feature-item p { font-size: 13px; color: var(--muted); line-height: 1.55; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CashFlow</h1>
+  <a href="dashboard.html" class="btn btn-outline btn-sm">Dashboard</a>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Track Expenses.<br>Split with Friends.</h1>
+    <p>Simple expense tracking and friend money management. Never forget who owes what.</p>
+    <a href="dashboard.html" class="btn btn-primary btn-lg">
+      Open App
+      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">
+        <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+
+  <div class="features">
+    <div class="feature-item">
+      <div class="feature-icon" style="background:#111;color:#fff">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/>
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+          <path d="M12 17.5v-11"/>
+        </svg>
+      </div>
+      <div>
+        <h3>Expense Tracking</h3>
+        <p>Log every expense with categories, dates, and amounts. Stay on top of your spending.</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon" style="background:var(--success-bg);color:var(--success)">
+        <svg viewBox="0 0 24 24">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" x2="19" y1="8" y2="14"/>
+          <line x1="22" x2="16" y1="11" y2="11"/>
+        </svg>
+      </div>
+      <div>
+        <h3>Friend Settlements</h3>
+        <p>Track who owes what. Settle up with friends and never argue about money again.</p>
+      </div>
+    </div>
+
+    <div class="feature-item">
+      <div class="feature-icon" style="background:var(--danger-bg);color:var(--danger)">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
+          <path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+        </svg>
+      </div>
+      <div>
+        <h3>Smart Insights</h3>
+        <p>Visualize spending by category. Understand where your money goes each month.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>
